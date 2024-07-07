@@ -7,7 +7,7 @@ import (
 )
 
 func TestBasicAggregatorHandlers(t *testing.T) {
-	server, err := NewAggregatorServer()
+	server, err := NewAggregatorServer(&ApiConfig{})
 	if err != nil {
 		t.Fatal(err)
 	}

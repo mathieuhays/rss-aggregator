@@ -9,14 +9,18 @@ import (
 type AggregatorServer struct {
 	// probably a store at some point
 	http.Handler
+	config *ApiConfig
 }
 
-func NewAggregatorServer() (*AggregatorServer, error) {
+func NewAggregatorServer(config *ApiConfig) (*AggregatorServer, error) {
 	s := new(AggregatorServer)
+	s.config = config
 
 	router := http.NewServeMux()
 	router.Handle("/v1/healthz", http.HandlerFunc(handlerReadiness))
 	router.Handle("/v1/err", http.HandlerFunc(handlerErr))
+
+	router.Handle("POST /v1/users", http.HandlerFunc(s.handlePostUsers))
 
 	s.Handler = router
 

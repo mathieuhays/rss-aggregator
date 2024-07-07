@@ -3,3 +3,13 @@ GET http://localhost:8080/v1/healthz
 
 ### Err endpoint
 GET http://localhost:8080/v1/err
+
+### Create user
+POST http://localhost:8080/v1/users
+Content-Type: application/json
+
+{
+  "name": "Mathieu"
+}
+
+###
