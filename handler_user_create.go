@@ -28,8 +28,8 @@ func (a *AggregatorServer) handlePostUsers(w http.ResponseWriter, r *http.Reques
 	ctx := context.Background()
 	user, err := a.config.DB.CreateUser(ctx, database.CreateUserParams{
 		ID:        uuid.New(),
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
+		CreatedAt: time.Now().UTC(),
+		UpdatedAt: time.Now().UTC(),
 		Name:      sql.NullString{String: payload.Name, Valid: true},
 	})
 
@@ -45,8 +45,8 @@ func (a *AggregatorServer) handlePostUsers(w http.ResponseWriter, r *http.Reques
 		Name      string `json:"name"`
 	}{
 		ID:        user.ID.String(),
-		CreatedAt: user.CreatedAt.String(),
-		UpdatedAt: user.UpdatedAt.String(),
+		CreatedAt: user.CreatedAt.Format(ResponseTimeFormat),
+		UpdatedAt: user.UpdatedAt.Format(ResponseTimeFormat),
 		Name:      user.Name.String,
 	})
 }

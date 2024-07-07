@@ -4,7 +4,10 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"time"
 )
+
+const ResponseTimeFormat = time.RFC3339
 
 type AggregatorServer struct {
 	// probably a store at some point

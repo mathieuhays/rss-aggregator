@@ -1,0 +1,7 @@
+### Readiness endpoint
+GET http://localhost:8080/v1/healthz
+
+### Err endpoint
+GET http://localhost:8080/v1/err
+
+###
