@@ -2,7 +2,6 @@ package rss_aggregator
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"github.com/google/uuid"
 	"github.com/mathieuhays/rss-aggregator/internal/database"
@@ -30,7 +29,7 @@ func (a *AggregatorServer) handlePostUsers(w http.ResponseWriter, r *http.Reques
 		ID:        uuid.New(),
 		CreatedAt: time.Now().UTC(),
 		UpdatedAt: time.Now().UTC(),
-		Name:      sql.NullString{String: payload.Name, Valid: true},
+		Name:      payload.Name,
 	})
 
 	if err != nil {
@@ -38,15 +37,5 @@ func (a *AggregatorServer) handlePostUsers(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	respondWithJSON(w, http.StatusCreated, struct {
-		ID        string `json:"id"`
-		CreatedAt string `json:"created_at"`
-		UpdatedAt string `json:"updated_at"`
-		Name      string `json:"name"`
-	}{
-		ID:        user.ID.String(),
-		CreatedAt: user.CreatedAt.Format(ResponseTimeFormat),
-		UpdatedAt: user.UpdatedAt.Format(ResponseTimeFormat),
-		Name:      user.Name.String,
-	})
+	respondWithJSON(w, http.StatusCreated, databaseUserToUser(user))
 }
