@@ -26,6 +26,7 @@ func NewAggregatorServer(config *ApiConfig) (*AggregatorServer, error) {
 	router.Handle("GET /v1/users", config.middlewareAuth(s.handleGetUser))
 	router.Handle("POST /v1/users", http.HandlerFunc(s.handlePostUsers))
 
+	router.Handle("GET /v1/feeds", http.HandlerFunc(s.handleGetFeeds))
 	router.Handle("POST /v1/feeds", config.middlewareAuth(s.handlePostFeeds))
 
 	s.Handler = router

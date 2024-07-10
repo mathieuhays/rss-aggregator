@@ -39,3 +39,27 @@ func TestHandlePostFeeds(t *testing.T) {
 		t.Errorf("expectations not met: %s", err.Error())
 	}
 }
+
+func TestHandleGetFeeds(t *testing.T) {
+	server, db, mock := createTestServer(t)
+	defer db.Close()
+
+	rows := sqlmock.NewRows([]string{"id", "created_at", "updated_at", "name", "url", "user_id"}).
+		AddRow(uuid.New(), time.Now().UTC(), time.Now().UTC(), "test", "https://example.com", uuid.New()).
+		AddRow(uuid.New(), time.Now().UTC(), time.Now().UTC(), "test 2", "https://example.com/2.xml", uuid.New())
+	mock.ExpectQuery("SELECT id, created_at, updated_at, name, url, user_id FROM feeds").WillReturnRows(rows)
+
+	request, _ := http.NewRequest(http.MethodGet, "/v1/feeds", nil)
+	response := httptest.NewRecorder()
+
+	server.ServeHTTP(response, request)
+
+	assertStatus(t, response, http.StatusOK)
+	assertJSONContentType(t, response)
+	assertBodyContains(t, response, `"name":"test"`)
+	assertBodyContains(t, response, `"name":"test 2"`)
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("expectations not met: %s", err.Error())
+	}
+}

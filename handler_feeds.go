@@ -42,3 +42,21 @@ func (a *AggregatorServer) handlePostFeeds(w http.ResponseWriter, r *http.Reques
 
 	respondWithJSON(w, http.StatusCreated, databaseFeedToFeed(feed))
 }
+
+func (a *AggregatorServer) handleGetFeeds(w http.ResponseWriter, r *http.Request) {
+	ctx := context.Background()
+	items, err := a.config.DB.GetFeeds(ctx)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	var publicItems []Feed
+	for _, item := range items {
+		publicItems = append(publicItems, databaseFeedToFeed(item))
+	}
+
+	respondWithJSON(w, http.StatusOK, struct {
+		Feeds []Feed `json:"feeds"`
+	}{Feeds: publicItems})
+}

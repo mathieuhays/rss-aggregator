@@ -8,4 +8,5 @@ Content-Type: application/json
   "url": "https://example.com"
 }
 
-###
+### Get all feeds
+GET http://localhost:8080/v1/feeds
