@@ -16,7 +16,7 @@ func (a *AggregatorServer) handleGetUser(w http.ResponseWriter, r *http.Request)
 	}
 
 	ctx := context.Background()
-	user, err := a.config.DB.GetUser(ctx, apiKey.Value)
+	user, err := a.config.DB.GetUserByAPIKey(ctx, apiKey.Value)
 
 	if errors.Is(err, sql.ErrNoRows) {
 		respondWithError(w, http.StatusForbidden, "forbidden")
