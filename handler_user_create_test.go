@@ -32,8 +32,8 @@ func TestHandlePostUsers(t *testing.T) {
 	response := httptest.NewRecorder()
 
 	id, _ := uuid.NewUUID()
-	rows := sqlmock.NewRows([]string{"id", "created_at", "updated_at", "name"}).
-		AddRow(id, time.Now().UTC(), time.Now().UTC(), "test")
+	rows := sqlmock.NewRows([]string{"id", "created_at", "updated_at", "name", "api_key"}).
+		AddRow(id, time.Now().UTC(), time.Now().UTC(), "test", "test")
 	mock.ExpectQuery("INSERT INTO users").WillReturnRows(rows)
 
 	server.ServeHTTP(response, request)
