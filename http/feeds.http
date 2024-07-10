@@ -1,0 +1,11 @@
+### Create new feed
+POST http://localhost:8080/v1/feeds
+Authorization: ApiKey 6d4e79dc8f8ca85f86256f95732d37f0629b1c654a86934fc3e760cc5f472da2
+Content-Type: application/json
+
+{
+  "name": "test",
+  "url": "https://example.com"
+}
+
+###

@@ -39,3 +39,7 @@ func (a *AggregatorServer) handlePostUsers(w http.ResponseWriter, r *http.Reques
 
 	respondWithJSON(w, http.StatusCreated, databaseUserToUser(user))
 }
+
+func (a *AggregatorServer) handleGetUser(w http.ResponseWriter, r *http.Request, user database.User) {
+	respondWithJSON(w, http.StatusOK, databaseUserToUser(user))
+}

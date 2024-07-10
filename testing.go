@@ -1,6 +1,8 @@
 package rss_aggregator
 
 import (
+	"database/sql"
+	"github.com/DATA-DOG/go-sqlmock"
 	"net/http/httptest"
 	"strings"
 	"testing"
@@ -34,4 +36,25 @@ func assertBodyContains(t testing.TB, response *httptest.ResponseRecorder, want 
 	if !strings.Contains(body, want) {
 		t.Errorf("expected body to contain %s. got %v", want, body)
 	}
+}
+
+func createTestServer(t testing.TB) (*AggregatorServer, *sql.DB, sqlmock.Sqlmock) {
+	t.Helper()
+
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	config, err := NewApiConfig(db)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	server, err := NewAggregatorServer(config)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	return server, db, mock
 }

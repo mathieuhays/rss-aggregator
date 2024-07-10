@@ -1,6 +1,7 @@
 package rss_aggregator
 
 import (
+	"bytes"
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/google/uuid"
 	"net/http"
@@ -9,23 +10,33 @@ import (
 	"time"
 )
 
+func TestHandlePostUsers(t *testing.T) {
+	server, db, mock := createTestServer(t)
+	defer db.Close()
+
+	bodyReader := bytes.NewReader([]byte(`{"name":"test"}`))
+	request, _ := http.NewRequest(http.MethodPost, "/v1/users", bodyReader)
+	response := httptest.NewRecorder()
+
+	rows := sqlmock.NewRows([]string{"id", "created_at", "updated_at", "name", "api_key"}).
+		AddRow(uuid.New(), time.Now().UTC(), time.Now().UTC(), "test", "test")
+	mock.ExpectQuery("INSERT INTO users").WillReturnRows(rows)
+
+	server.ServeHTTP(response, request)
+
+	assertStatus(t, response, http.StatusCreated)
+	assertJSONContentType(t, response)
+	assertBodyContains(t, response, `"name":"test"`)
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("expectations not met: %s", err.Error())
+	}
+}
+
 func TestHandleGetUser(t *testing.T) {
 	t.Run("valid user", func(t *testing.T) {
-		db, mock, err := sqlmock.New()
-		if err != nil {
-			t.Fatal(err)
-		}
+		server, db, mock := createTestServer(t)
 		defer db.Close()
-
-		config, err := NewApiConfig(db)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		server, err := NewAggregatorServer(config)
-		if err != nil {
-			t.Fatal(err)
-		}
 
 		testApiKey := "testapikey"
 		request, _ := http.NewRequest(http.MethodGet, "/v1/users", nil)
@@ -43,27 +54,14 @@ func TestHandleGetUser(t *testing.T) {
 		assertJSONContentType(t, response)
 		assertBodyContains(t, response, `"name":"test"`)
 
-		if err = mock.ExpectationsWereMet(); err != nil {
+		if err := mock.ExpectationsWereMet(); err != nil {
 			t.Errorf("expectations not met: %s", err.Error())
 		}
 	})
 
 	t.Run("not found", func(t *testing.T) {
-		db, mock, err := sqlmock.New()
-		if err != nil {
-			t.Fatal(err)
-		}
+		server, db, mock := createTestServer(t)
 		defer db.Close()
-
-		config, err := NewApiConfig(db)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		server, err := NewAggregatorServer(config)
-		if err != nil {
-			t.Fatal(err)
-		}
 
 		testApiKey := "testapikey"
 		request, _ := http.NewRequest(http.MethodGet, "/v1/users", nil)
@@ -78,7 +76,7 @@ func TestHandleGetUser(t *testing.T) {
 		assertStatus(t, response, http.StatusForbidden)
 		assertJSONContentType(t, response)
 
-		if err = mock.ExpectationsWereMet(); err != nil {
+		if err := mock.ExpectationsWereMet(); err != nil {
 			t.Errorf("expectations not met: %s", err.Error())
 		}
 	})
