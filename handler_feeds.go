@@ -34,13 +34,30 @@ func (a *AggregatorServer) handlePostFeeds(w http.ResponseWriter, r *http.Reques
 		Url:       payload.URL,
 		UserID:    user.ID,
 	})
-
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	respondWithJSON(w, http.StatusCreated, databaseFeedToFeed(feed))
+	feedFollow, err := a.config.DB.CreateFeedFollow(ctx, database.CreateFeedFollowParams{
+		ID:        uuid.New(),
+		FeedID:    feed.ID,
+		UserID:    user.ID,
+		CreatedAt: time.Now().UTC(),
+		UpdatedAt: time.Now().UTC(),
+	})
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	respondWithJSON(w, http.StatusCreated, struct {
+		Feed       Feed       `json:"feed"`
+		FeedFollow FeedFollow `json:"feed_follow"`
+	}{
+		Feed:       databaseFeedToFeed(feed),
+		FeedFollow: databaseFeedFollowToFeedFollow(feedFollow),
+	})
 }
 
 func (a *AggregatorServer) handleGetFeeds(w http.ResponseWriter, r *http.Request) {
@@ -56,7 +73,5 @@ func (a *AggregatorServer) handleGetFeeds(w http.ResponseWriter, r *http.Request
 		publicItems = append(publicItems, databaseFeedToFeed(item))
 	}
 
-	respondWithJSON(w, http.StatusOK, struct {
-		Feeds []Feed `json:"feeds"`
-	}{Feeds: publicItems})
+	respondWithJSON(w, http.StatusOK, publicItems)
 }

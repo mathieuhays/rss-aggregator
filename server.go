@@ -29,6 +29,10 @@ func NewAggregatorServer(config *ApiConfig) (*AggregatorServer, error) {
 	router.Handle("GET /v1/feeds", http.HandlerFunc(s.handleGetFeeds))
 	router.Handle("POST /v1/feeds", config.middlewareAuth(s.handlePostFeeds))
 
+	router.Handle("GET /v1/feed_follows", config.middlewareAuth(s.handleGetFeedFollows))
+	router.Handle("POST /v1/feed_follows", config.middlewareAuth(s.handlePostFeedFollows))
+	router.Handle("DELETE /v1/feed_follows/{feedFollowID}", config.middlewareAuth(s.handleDeleteFeedFollow))
+
 	s.Handler = router
 
 	return s, nil

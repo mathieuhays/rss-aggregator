@@ -1,0 +1,16 @@
+### Create new feed follow
+POST http://localhost:8080/v1/feed_follows
+Authorization: ApiKey 6d4e79dc8f8ca85f86256f95732d37f0629b1c654a86934fc3e760cc5f472da2
+Content-Type: application/json
+
+{
+  "feed_id": "477cc733-ecf0-40ad-af96-574d8b24291d"
+}
+
+### Get all feed follows
+GET http://localhost:8080/v1/feed_follows
+Authorization: ApiKey 6d4e79dc8f8ca85f86256f95732d37f0629b1c654a86934fc3e760cc5f472da2
+
+### Delete feed follow
+DELETE http://localhost:8080/v1/feed_follows/81d8c72e-bf9e-41c3-b08e-e72cd4eb164b
+Authorization: ApiKey 6d4e79dc8f8ca85f86256f95732d37f0629b1c654a86934fc3e760cc5f472da2
