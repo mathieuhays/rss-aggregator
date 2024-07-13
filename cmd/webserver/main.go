@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 )
 
 func main() {
@@ -36,6 +37,11 @@ func main() {
 	}
 
 	server, err := rss.NewAggregatorServer(config)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	_, err = rss.NewScraper(config, time.Minute)
 	if err != nil {
 		log.Fatal(err)
 	}
