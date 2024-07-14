@@ -3,6 +3,7 @@ package rss_aggregator
 import (
 	"database/sql"
 	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/mathieuhays/rss-aggregator/internal/database"
 	"net/http/httptest"
 	"strings"
 	"testing"
@@ -46,7 +47,8 @@ func createTestServer(t testing.TB) (*AggregatorServer, *sql.DB, sqlmock.Sqlmock
 		t.Fatal(err)
 	}
 
-	config, err := NewApiConfig(db)
+	dbQueries := database.New(db)
+	config, err := NewApiConfig(dbQueries)
 	if err != nil {
 		t.Fatal(err)
 	}

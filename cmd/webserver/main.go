@@ -5,6 +5,7 @@ import (
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 	rss "github.com/mathieuhays/rss-aggregator"
+	"github.com/mathieuhays/rss-aggregator/internal/database"
 	"log"
 	"net/http"
 	"os"
@@ -31,7 +32,8 @@ func main() {
 		log.Fatal(err)
 	}
 
-	config, err := rss.NewApiConfig(db)
+	dbQueries := database.New(db)
+	config, err := rss.NewApiConfig(dbQueries)
 	if err != nil {
 		log.Fatal(config)
 	}
@@ -41,7 +43,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	_, err = rss.NewScraper(config, time.Minute)
+	_, err = rss.NewScraper(dbQueries, time.Minute)
 	if err != nil {
 		log.Fatal(err)
 	}

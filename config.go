@@ -13,8 +13,8 @@ type ApiConfig struct {
 	DB *database.Queries
 }
 
-func NewApiConfig(db database.DBTX) (*ApiConfig, error) {
-	return &ApiConfig{DB: database.New(db)}, nil
+func NewApiConfig(db *database.Queries) (*ApiConfig, error) {
+	return &ApiConfig{DB: db}, nil
 }
 
 type authedHandler func(http.ResponseWriter, *http.Request, database.User)
