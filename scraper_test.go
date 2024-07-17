@@ -2,6 +2,7 @@ package rss_aggregator
 
 import (
 	"database/sql"
+	"errors"
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/google/uuid"
 	"github.com/mathieuhays/rss-aggregator/internal/database"
@@ -129,6 +130,117 @@ func TestFetchFeed(t *testing.T) {
 
 		if !strings.HasPrefix(err.Error(), "feed unavailable") {
 			t.Errorf("wrong error detected. Expected: feed unavailable. got %s", err.Error())
+		}
+
+		if err = mock.ExpectationsWereMet(); err != nil {
+			t.Errorf("expectations not met: %s", err.Error())
+		}
+	})
+}
+
+func TestMaybeCreatePost(t *testing.T) {
+	t.Run("new post", func(t *testing.T) {
+		db, mock, err := sqlmock.New()
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		dbQueries := database.New(db)
+
+		scraper := &Scraper{
+			httpClient: http.Client{},
+			db:         dbQueries,
+		}
+
+		testFeed := database.Feed{
+			ID:        uuid.New(),
+			CreatedAt: time.Now().UTC(),
+			UpdatedAt: time.Now().UTC(),
+			Name:      "test feed",
+			Url:       "https://example.com/test",
+			UserID:    uuid.New(),
+			LastFetchedAt: sql.NullTime{
+				Time:  time.Now().UTC(),
+				Valid: true,
+			},
+		}
+
+		testItem := RSSItem{
+			Title:          "test item",
+			Link:           "https://example.com/test-item/",
+			PublishingDate: "Wed, 01 May 2024 00:00:00 +0000",
+			Guid:           "https://example.com/test-item/",
+			Description:    "test",
+		}
+
+		mock.ExpectQuery("SELECT id, created_at, updated_at, title, url, description, published_at, feed_id FROM posts").WillReturnError(sql.ErrNoRows)
+
+		newRow := sqlmock.NewRows([]string{"id", "created_at", "published_at", "title", "url", "description", "published_at", "feed_Id"}).
+			AddRow(uuid.New(), time.Now(), time.Now(), testItem.Title, testItem.Link, testItem.Description, sql.NullTime{
+				Time:  time.Now(),
+				Valid: true,
+			}, testFeed.ID)
+		mock.ExpectQuery("INSERT INTO posts").WillReturnRows(newRow)
+
+		_, err = scraper.maybeCreatePost(testFeed, testItem)
+		if err != nil {
+			t.Fatalf("unexpected error: %s", err.Error())
+		}
+
+		if err = mock.ExpectationsWereMet(); err != nil {
+			t.Errorf("expectations not met: %s", err.Error())
+		}
+	})
+
+	t.Run("existing post", func(t *testing.T) {
+		db, mock, err := sqlmock.New()
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		dbQueries := database.New(db)
+
+		scraper := &Scraper{
+			httpClient: http.Client{},
+			db:         dbQueries,
+		}
+
+		testFeed := database.Feed{
+			ID:        uuid.New(),
+			CreatedAt: time.Now().UTC(),
+			UpdatedAt: time.Now().UTC(),
+			Name:      "test feed",
+			Url:       "https://example.com/test",
+			UserID:    uuid.New(),
+			LastFetchedAt: sql.NullTime{
+				Time:  time.Now().UTC(),
+				Valid: true,
+			},
+		}
+
+		testItem := RSSItem{
+			Title:          "test item",
+			Link:           "https://example.com/test-item/",
+			PublishingDate: "Wed, 01 May 2024 00:00:00 +0000",
+			Guid:           "https://example.com/test-item/",
+			Description:    "test",
+		}
+
+		foundPostRow := sqlmock.NewRows([]string{"id", "created_at", "published_at", "title", "url", "description", "published_at", "feed_Id"}).
+			AddRow(uuid.New(), time.Now(), time.Now(), testItem.Title, testItem.Link, testItem.Description, sql.NullTime{
+				Time:  time.Now(),
+				Valid: true,
+			}, testFeed.ID)
+		mock.ExpectQuery("SELECT id, created_at, updated_at, title, url, description, published_at, feed_id FROM posts").
+			WillReturnRows(foundPostRow)
+
+		_, err = scraper.maybeCreatePost(testFeed, testItem)
+		if err == nil {
+			t.Fatal("expected error. got none")
+		}
+
+		if !errors.Is(err, errPostAlreadyExists) {
+			t.Errorf("unexpected error. expected PostAlreadyExist error. got: %s", err.Error())
 		}
 
 		if err = mock.ExpectationsWereMet(); err != nil {

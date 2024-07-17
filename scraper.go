@@ -6,6 +6,7 @@ import (
 	"encoding/xml"
 	"errors"
 	"fmt"
+	"github.com/google/uuid"
 	"github.com/mathieuhays/rss-aggregator/internal/database"
 	"io"
 	"log"
@@ -38,6 +39,10 @@ type RSSFeed struct {
 		Items         []RSSItem `xml:"item"`
 	} `xml:"channel"`
 }
+
+var (
+	errPostAlreadyExists = errors.New("post already exists")
+)
 
 func NewScraper(db *database.Queries, interval time.Duration) (*Scraper, error) {
 	scraper := &Scraper{
@@ -121,8 +126,65 @@ func (s *Scraper) refreshFeeds() {
 			}
 
 			log.Printf("%s fetched successfully. %d items found", feed.Url, len(rssFeed.Channel.Items))
+
+			for _, item := range rssFeed.Channel.Items {
+				_, err = s.maybeCreatePost(feed, item)
+				if err != nil {
+					if errors.Is(err, errPostAlreadyExists) {
+						log.Printf("Skipping existing post. FID: %s. URL: %s", feed.ID, item.Link)
+						continue
+					}
+
+					log.Printf("FID: %s; URL: %s; error: %s", feed.ID, item.Link, err.Error())
+					continue
+				}
+
+				log.Printf("New post added! FID: %s. URL: %s", feed.ID.String(), item.Link)
+			}
 		}(dbFeed)
 	}
 
 	wg.Wait()
+}
+
+func (s *Scraper) maybeCreatePost(feed database.Feed, item RSSItem) (uuid.UUID, error) {
+	ctx := context.Background()
+	p, err := s.db.GetPostByFeedAndUrl(ctx, database.GetPostByFeedAndUrlParams{
+		FeedID: feed.ID,
+		Url:    item.Link,
+	})
+	if err == nil {
+		return p.ID, errPostAlreadyExists
+	}
+
+	if !errors.Is(err, sql.ErrNoRows) {
+		return uuid.UUID{}, err
+	}
+
+	publishedDate, err := time.Parse(time.RFC1123Z, item.PublishingDate)
+	if err != nil {
+		return uuid.UUID{}, errors.New(fmt.Sprintf("could not parse publishing date: %s", err.Error()))
+	}
+
+	p, err = s.db.CreatePost(ctx, database.CreatePostParams{
+		ID:        uuid.New(),
+		CreatedAt: time.Now().UTC(),
+		UpdatedAt: time.Now().UTC(),
+		Title:     item.Title,
+		Url:       item.Link,
+		Description: sql.NullString{
+			String: item.Description,
+			Valid:  true,
+		},
+		PublishedAt: sql.NullTime{
+			Time:  publishedDate,
+			Valid: true,
+		},
+		FeedID: feed.ID,
+	})
+	if err != nil {
+		return uuid.UUID{}, errors.New(fmt.Sprintf("could not create post: %s", err.Error()))
+	}
+
+	return p.ID, nil
 }
